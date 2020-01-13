@@ -30,7 +30,7 @@ def GetUserName (commitHash)
 
 pipeline
 	{
-		agent { node { label 'test' } }
+		agent { node { label 'dev' } }
 		//agent any
 		stages
 			{
