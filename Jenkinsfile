@@ -14,7 +14,8 @@ def CleanUp(location){
 def GetUserName (commitHash)
 	{
 		// Git committer User id
-		sh "pushd %workspace% & git show -s --format=%%an ${commitHash} > commandResult"
+		echo "WorkSpacePath is ${WORKSPACE}"
+		sh "cd ${WORKSPACE};git show -s --format='%an' ${commitHash} > commandResult"
 		result = readFile('commandResult').trim()
 		result = result.replace(" ", "").replace("," ,"")
 		if (result.contains("\\"))
@@ -29,8 +30,8 @@ def GetUserName (commitHash)
 
 pipeline
 	{
-		//agent { node { label 'JENKINS-Bldnode74' } }
-		agent any
+		agent { node { label 'test' } }
+		//agent any
 		stages
 			{
 			// clean up
@@ -38,7 +39,8 @@ pipeline
 				{
 				steps
 					{
-					CleanUp('%workspace%')
+						cleanWs()		 
+					        //CleanUp('%workspace%')
 					}
 				}
 
@@ -72,10 +74,26 @@ pipeline
 						{		
                            				echo "executing ${WORKSPACE}/src/build-hworld.sh"
 							sh "echo $PWD"
-							sh "pushd ${WORKSPACE}/src/ ; bash ./build-hworld.sh ${WORKSPACE}/src/"
+							sh "cd ${WORKSPACE}/src/;bash ./build-hworld.sh ${WORKSPACE}/src/"
 							echo "completed build"													
 						}
 					}
+				}
+				
+			// upload
+			stage('Upload to S3 repository') 
+				{
+				steps
+					{
+					script 
+						{		
+                           				echo "uploading output.tar.gz to cicd-buildpoc-repo/repository/cihworld/1.0/${env.BUILD_NUMBER}/"
+							sh "aws s3 cp ${WORKSPACE}/build/output.tar.gz s3://cicd-buildpoc-repo/repository/cihworld/1.0/${env.BUILD_NUMBER}/output.tar.gz"
+							echo "upload successful"													
+						}
+					}
 				}				
+				
+				
 			}    	
 	}					
